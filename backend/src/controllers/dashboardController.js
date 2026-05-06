@@ -19,31 +19,22 @@ const getProjectDashboard = async (req, res) => {
       }
     });
 
-    // Tasks per user
-    const tasksPerUser = await prisma.task.groupBy({
+    // Tasks per user - single query with user details
+    const tasksPerUserWithDetails = await prisma.task.groupBy({
       by: ['assignedToId'],
       where: {
         projectId: parseInt(projectId),
         assignedToId: { not: null }
       },
-      _count: {
-        id: true
-      }
+      _count: { id: true }
+    }).then(async (groups) => {
+      const users = await prisma.user.findMany({
+        where: { id: { in: groups.map(g => g.assignedToId) } },
+        select: { id: true, name: true, email: true }
+      });
+      const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+      return groups.map(g => ({ user: userMap[g.assignedToId], taskCount: g._count.id }));
     });
-
-    // Enrich with user data
-    const tasksPerUserWithDetails = await Promise.all(
-      tasksPerUser.map(async (item) => {
-        const user = await prisma.user.findUnique({
-          where: { id: item.assignedToId },
-          select: { id: true, name: true, email: true }
-        });
-        return {
-          user,
-          taskCount: item._count.id
-        };
-      })
-    );
 
     // Overdue tasks
     const overdueTasks = await prisma.task.findMany({
@@ -137,29 +128,24 @@ const getUserDashboard = async (req, res) => {
       }
     });
 
-    // User's projects summary
-    const projectsSummary = await Promise.all(
-      userProjects.map(async (pm) => {
-        const taskCount = await prisma.task.count({
-          where: { projectId: pm.project.id }
-        });
-        const doneCount = await prisma.task.count({
-          where: {
-            projectId: pm.project.id,
-            status: 'DONE'
-          }
-        });
+    // User's projects summary - single query with task counts
+    const projectsWithTasks = await prisma.project.findMany({
+      where: { id: { in: projectIds } },
+      include: {
+        _count: { select: { tasks: true } },
+        tasks: { where: { status: 'DONE' }, select: { id: true } },
+        members: { where: { userId }, select: { role: true } }
+      }
+    });
 
-        return {
-          projectId: pm.project.id,
-          projectName: pm.project.name,
-          role: pm.role,
-          taskCount,
-          completedTasks: doneCount,
-          pendingTasks: taskCount - doneCount
-        };
-      })
-    );
+    const projectsSummary = projectsWithTasks.map((p) => ({
+      projectId: p.id,
+      projectName: p.name,
+      role: p.members[0]?.role,
+      taskCount: p._count.tasks,
+      completedTasks: p.tasks.length,
+      pendingTasks: p._count.tasks - p.tasks.length
+    }));
 
     res.json({
       message: 'User dashboard retrieved successfully',
@@ -205,27 +191,23 @@ const getProjectStatistics = async (req, res) => {
 
     const completionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(2) : 0;
 
-    // Most active members (by task creation)
+    // Most active members - single batch query
     const mostActiveMembers = await prisma.task.groupBy({
       by: ['createdById'],
       where: { projectId: projectIdNum },
-      _count: {
-        id: true
-      }
+      _count: { id: true }
     });
 
-    const mostActiveMembersWithDetails = await Promise.all(
-      mostActiveMembers.slice(0, 5).map(async (item) => {
-        const user = await prisma.user.findUnique({
-          where: { id: item.createdById },
-          select: { id: true, name: true, email: true }
-        });
-        return {
-          user,
-          taskCount: item._count.id
-        };
-      })
-    );
+    const topMembers = mostActiveMembers.slice(0, 5);
+    const activeUsers = await prisma.user.findMany({
+      where: { id: { in: topMembers.map(m => m.createdById) } },
+      select: { id: true, name: true, email: true }
+    });
+    const activeUserMap = Object.fromEntries(activeUsers.map(u => [u.id, u]));
+    const mostActiveMembersWithDetails = topMembers.map(m => ({
+      user: activeUserMap[m.createdById],
+      taskCount: m._count.id
+    }));
 
     // Tasks created in last 7 days
     const sevenDaysAgo = new Date();
