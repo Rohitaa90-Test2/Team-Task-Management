@@ -80,11 +80,6 @@ export const Login = () => {
             Sign Up
           </Link>
         </p>
-
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-gray-600">
-          <p className="font-semibold mb-2">Demo Accounts:</p>
-          <p>Email: admin@example.com | Password: password123</p>
-        </div>
       </div>
     </div>
   );
