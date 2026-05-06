@@ -5,6 +5,7 @@ import { projectAPI, taskAPI } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import { Plus, Trash2, CheckCircle2, Clock, AlertCircle, Users } from 'lucide-react';
 import { showError, showSuccess } from '../utils/toast';
+import { Loader } from '../components/Loader';
 
 export const ProjectDetail = () => {
   const { id } = useParams();
@@ -112,16 +113,7 @@ export const ProjectDetail = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-2xl font-bold text-gray-600">Loading...</div>
-        </div>
-      </>
-    );
-  }
+  if (loading) return <Loader />;
 
   return (
     <>

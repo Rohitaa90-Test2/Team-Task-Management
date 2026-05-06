@@ -3,6 +3,7 @@ import { Navbar } from '../components/Navbar';
 import { dashboardAPI, projectAPI } from '../api/services';
 import { BarChart3, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { showError } from '../utils/toast';
+import { Loader } from '../components/Loader';
 
 export const Dashboard = () => {
   const [dashboard, setDashboard] = useState(null);
@@ -29,16 +30,7 @@ export const Dashboard = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-2xl font-bold text-gray-600">Loading...</div>
-        </div>
-      </>
-    );
-  }
+  if (loading) return <Loader />;
 
   return (
     <>

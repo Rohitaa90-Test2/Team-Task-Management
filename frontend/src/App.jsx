@@ -3,6 +3,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './context/AuthContext';
+import { Loader } from './components/Loader';
 
 import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
@@ -13,13 +14,7 @@ import { ProjectDetail } from './pages/ProjectDetail';
 function App() {
   const { user, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-2xl font-bold text-gray-600">Loading...</div>
-      </div>
-    );
-  }
+  if (loading) return <Loader />;
 
   return (
     <>

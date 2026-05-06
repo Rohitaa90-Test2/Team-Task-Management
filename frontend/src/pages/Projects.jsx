@@ -5,6 +5,7 @@ import { projectAPI } from '../api/services';
 import { Plus } from 'lucide-react';
 import { showError, showSuccess } from '../utils/toast';
 import { useAuth } from '../context/AuthContext';
+import { Loader } from '../components/Loader';
 
 const SectionHeader = ({ title, count }) => (
   <div className="flex items-center gap-3 mb-4">
@@ -69,16 +70,7 @@ export const Projects = () => {
   const myProjects = projects.filter(isAdmin);
   const assignedProjects = projects.filter(p => !isAdmin(p));
 
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-2xl font-bold text-gray-600">Loading...</div>
-        </div>
-      </>
-    );
-  }
+  if (loading) return <Loader />;
 
   return (
     <>
