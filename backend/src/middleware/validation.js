@@ -48,15 +48,15 @@ const taskValidation = {
     }),
     description: Joi.string().optional(),
     status: Joi.string().valid('TODO', 'IN_PROGRESS', 'DONE').default('TODO'),
-    assignedToId: Joi.number().optional(),
-    dueDate: Joi.date().optional()
+    assignedToId: Joi.number().optional().allow(null),
+    dueDate: Joi.date().optional().allow('', null)
   }),
   update: Joi.object({
     title: Joi.string().min(3).optional(),
     description: Joi.string().optional(),
     status: Joi.string().valid('TODO', 'IN_PROGRESS', 'DONE').optional(),
     assignedToId: Joi.number().optional().allow(null),
-    dueDate: Joi.date().optional()
+    dueDate: Joi.date().optional().allow('', null)
   })
 };
 
