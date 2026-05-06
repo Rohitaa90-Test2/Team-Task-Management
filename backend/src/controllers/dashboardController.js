@@ -84,19 +84,17 @@ const getUserDashboard = async (req, res) => {
 
     const projectIds = userProjects.map(pm => pm.project.id);
 
-    // Total tasks assigned to user
+    // Total tasks in user's projects
     const totalAssignedTasks = await prisma.task.count({
       where: {
-        assignedToId: userId,
         projectId: { in: projectIds }
       }
     });
 
-    // Assigned tasks by status
+    // Tasks by status in user's projects
     const assignedTasksByStatus = await prisma.task.groupBy({
       by: ['status'],
       where: {
-        assignedToId: userId,
         projectId: { in: projectIds }
       },
       _count: {

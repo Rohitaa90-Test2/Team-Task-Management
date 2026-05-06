@@ -49,14 +49,14 @@ export const Dashboard = () => {
             />
             <StatCard
               icon={<CheckCircle2 className="text-green-600" size={32} />}
-              title="Task Status"
-              value={`${dashboard?.assignedTasksByStatus?.[2]?.count || 0} Done`}
+              title="Completed"
+              value={dashboard?.assignedTasksByStatus?.find(s => s.status === 'DONE')?.count || 0}
               color="bg-green-50"
             />
             <StatCard
               icon={<Clock className="text-yellow-600" size={32} />}
               title="In Progress"
-              value={dashboard?.assignedTasksByStatus?.[1]?.count || 0}
+              value={dashboard?.assignedTasksByStatus?.find(s => s.status === 'IN_PROGRESS')?.count || 0}
               color="bg-yellow-50"
             />
             <StatCard
