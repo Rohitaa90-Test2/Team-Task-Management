@@ -23,6 +23,7 @@ export const Projects = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '' });
+  const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => { fetchProjects(); }, []);
@@ -41,6 +42,8 @@ export const Projects = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     try {
       await projectAPI.create(formData.name, formData.description);
       showSuccess('Project created successfully!');
@@ -49,6 +52,8 @@ export const Projects = () => {
       fetchProjects();
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to create project');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -114,8 +119,8 @@ export const Projects = () => {
                   />
                 </div>
                 <div className="flex gap-4">
-                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
-                    Create
+                  <button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg transition">
+                    {submitting ? 'Creating...' : 'Create'}
                   </button>
                   <button type="button" onClick={() => setShowForm(false)} className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-lg transition">
                     Cancel
