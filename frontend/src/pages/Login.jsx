@@ -9,6 +9,7 @@ export const Login = () => {
     password: ''
   });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -19,8 +20,21 @@ export const Login = () => {
     });
   };
 
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Enter a valid email address';
+    if (!formData.password) newErrors.password = 'Password is required';
+    return newErrors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors({});
     setLoading(true);
 
     try {
@@ -48,9 +62,9 @@ export const Login = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
             />
+            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
           </div>
 
           <div>
@@ -60,9 +74,9 @@ export const Login = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
             />
+            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
           </div>
 
           <button
