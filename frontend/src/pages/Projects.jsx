@@ -1,20 +1,30 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
+import { ProjectCard } from '../components/ProjectCard';
 import { projectAPI } from '../api/services';
-import { Plus, Edit2, Trash2, Users } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { showError, showSuccess } from '../utils/toast';
+import { useAuth } from '../context/AuthContext';
+
+const SectionHeader = ({ title, count }) => (
+  <div className="flex items-center gap-3 mb-4">
+    <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
+    <span className="bg-blue-100 text-blue-700 text-sm font-semibold px-2.5 py-0.5 rounded-full">{count}</span>
+  </div>
+);
+
+const EmptyState = ({ message }) => (
+  <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500 text-sm">{message}</div>
+);
 
 export const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '' });
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  useEffect(() => { fetchProjects(); }, []);
 
   const fetchProjects = async () => {
     try {
@@ -53,6 +63,12 @@ export const Projects = () => {
     }
   };
 
+  const isAdmin = (project) =>
+    project.members?.some(m => m.user?.id === user?.id && m.role === 'ADMIN');
+
+  const myProjects = projects.filter(isAdmin);
+  const assignedProjects = projects.filter(p => !isAdmin(p));
+
   if (loading) {
     return (
       <>
@@ -69,6 +85,8 @@ export const Projects = () => {
       <Navbar />
       <div className="min-h-screen bg-gray-100 py-8">
         <div className="max-w-7xl mx-auto px-4">
+
+          {/* Page Header */}
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-4xl font-bold text-gray-800">Projects</h1>
             <button
@@ -79,6 +97,7 @@ export const Projects = () => {
             </button>
           </div>
 
+          {/* Create Form */}
           {showForm && (
             <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">Create New Project</h2>
@@ -99,21 +118,14 @@ export const Projects = () => {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows="4"
+                    rows="3"
                   />
                 </div>
                 <div className="flex gap-4">
-                  <button
-                    type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
-                  >
+                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
                     Create
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowForm(false)}
-                    className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-lg transition"
-                  >
+                  <button type="button" onClick={() => setShowForm(false)} className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-lg transition">
                     Cancel
                   </button>
                 </div>
@@ -121,52 +133,37 @@ export const Projects = () => {
             </div>
           )}
 
-          {projects.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-              <p className="text-gray-600 text-lg">No projects yet. Create one to get started!</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map((project) => (
-                <div key={project.id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
-                  <div className="flex justify-between items-start mb-4">
-                    <h2 className="text-xl font-bold text-gray-800">{project.name}</h2>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => navigate(`/projects/${project.id}`)}
-                        className="p-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(project.id)}
-                        className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200 transition"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
+          {/* My Projects */}
+          <div className="mb-10">
+            <SectionHeader title="My Projects" count={myProjects.length} />
+            {myProjects.length === 0 ? (
+              <EmptyState message="You haven't created any projects yet. Click 'New Project' to get started!" />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {myProjects.map(project => (
+                  <ProjectCard key={project.id} project={project} isAdmin={true} onDelete={handleDelete} />
+                ))}
+              </div>
+            )}
+          </div>
 
-                  <p className="text-gray-600 mb-4">{project.description || 'No description'}</p>
+          {/* Divider */}
+          <hr className="border-gray-300 mb-10" />
 
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <Users size={18} />
-                      <span>{project.members?.length || 0} members</span>
-                    </div>
-                    <span>{project._count?.tasks || 0} tasks</span>
-                  </div>
+          {/* Assigned Projects */}
+          <div>
+            <SectionHeader title="Assigned Projects" count={assignedProjects.length} />
+            {assignedProjects.length === 0 ? (
+              <EmptyState message="You haven't been assigned to any projects yet." />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {assignedProjects.map(project => (
+                  <ProjectCard key={project.id} project={project} isAdmin={false} onDelete={handleDelete} />
+                ))}
+              </div>
+            )}
+          </div>
 
-                  <button
-                    onClick={() => navigate(`/projects/${project.id}`)}
-                    className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition"
-                  >
-                    View Details
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </>
