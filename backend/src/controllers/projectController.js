@@ -6,12 +6,24 @@ const createProject = async (req, res) => {
     console.log('🚀 Creating project with data:', req.body);
     const { name, description } = req.body;
     const ownerId = req.user.userId;
-    
-    console.log(`📌 Project: ${name}, Owner: ${ownerId}`);
+    const normalizedName = name.trim();
+
+    console.log(`📌 Project: ${normalizedName}, Owner: ${ownerId}`);
+
+    const duplicate = await prisma.project.findFirst({
+      where: {
+        ownerId,
+        name: { equals: normalizedName, mode: 'insensitive' }
+      }
+    });
+
+    if (duplicate) {
+      return res.status(409).json({ message: 'You already have a project with this name' });
+    }
 
     const project = await prisma.project.create({
       data: {
-        name,
+        name: normalizedName,
         description,
         ownerId,
         members: {
@@ -115,6 +127,22 @@ const updateProject = async (req, res) => {
   try {
     const { projectId } = req.params;
     const { name, description } = req.body;
+    const ownerId = req.user.userId;
+
+    if (name) {
+      const normalizedName = name.trim();
+      const duplicate = await prisma.project.findFirst({
+        where: {
+          ownerId,
+          name: { equals: normalizedName, mode: 'insensitive' },
+          NOT: { id: parseInt(projectId) }
+        }
+      });
+
+      if (duplicate) {
+        return res.status(409).json({ message: 'You already have a project with this name' });
+      }
+    }
 
     const project = await prisma.project.update({
       where: { id: parseInt(projectId) },
